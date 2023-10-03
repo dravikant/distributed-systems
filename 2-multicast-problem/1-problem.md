@@ -32,6 +32,76 @@ Congestion: When a large number of viewers simultaneously join a live stream, it
 To address these challenges in a practical example like live streaming, specialized multicast protocols or distribution mechanisms may be employed. These mechanisms often involve a combination of network-level multicast support, error correction techniques, and congestion control algorithms. Additionally, content delivery networks (CDNs) and cloud providers may offer solutions tailored to efficient multicast-like content distribution to alleviate these problems in a cloud computing context.
 
 
+### Requirement
+
+- Fault tolerance and scalability
+    
+    - Because the nodes may crash
+
+    - Packet may be dropped
+
+    - Thousands of nodes.
+
+- Most in the application level.
+
+
+### Implementation
+
+#### 1. Centeralized
+
+- It's the simplest implementation.
+
+- Put receipients in the for or while loop, go though the group member and send the TCP or UDP packets
+
+- Problems:
+    
+    - Fault tolerance
+
+    - Latency, since the sender has to go through sequentially
+
+    - Time complexity: `O(n)`(Suppose we have n nodes.)
+
+#### 2. Tree-based
+
+- If you build a balanced(or almost balanced) tree, the height of a n-nodes tree is log(n) => That means the time complexity to reach each node is `O(log(n))`. 
+
+- Problems:
+    
+    - Needs to maintain the tree
+        - nodes may come and go randomly   
+
+- Solutions:
+
+    - Build a spanning tree among the process of multicast group.
+
+        - each node receives one msg and forwards its copy to all child nodes
+
+    - Use spanning tree to disemminate multicast
+
+        -   if node closer to root fails most of the tree is unreachable
+
+    - Use acknowledgements(ACKs) or negative acknowledgements(NAKs) to repair the nodes which do not receive message.
+    
+        - Issues: ACKs and NAKs might implode. For instance if the multicast wasn't sent successfully at the initial.
+
+        - SRM (Scalable Reliable Multicast): 
+            
+            - Use NAKs with ramdom wait times. 
+
+            - If the receiver need to send NAKs multiple time it should use exponential backoff to avoid NAK storms
+
+        - RMTP (Reliable Multicast Transport Protocol):
+
+             - Use ACKs 
+
+             - Only send to deignated receiver.
+
+             - ACKs contain digest of msg received so far and receiver can resend missing msg if required
+
+- Conclustion:
+
+    - Both SRM and RMTP have the message implossion problem, so that's why we develop gossip based and epidemic based protocol.
+
 
 
 
