@@ -1,0 +1,179 @@
+Example : wordcount
+
+
+Map:
+
+Parallely process a large number of individual records
+
+to generate intermediate key value pair 
+
+(Each map works independently)
+
+
+e.g  from a file
+
+key         value
+"Hello"     1
+"Hi"        1
+"Hello"     1 --> independent of earlier records
+
+
+
+
+Reduce:
+
+processes and merges all intermediate values associated with a given key
+
+key         value
+"Hello"     2
+
+records with same key need to be grouped
+
+Assign each key to one Reduce
+
+e.g. hash partitioning
+
+reduce = hash(key)% no of servers
+
+
+
+Reduces process batches of values associated with the same key while Maps process keys independently
+
+
+input to reduce is sorted ..
+
+so if we partition the keys across redicers based on range .. we can use map redice for sorting
+
+
+
+Advantage of Maps and Reduces sorting their outputs:
+
+
+A Map can know which contiguous sets of its key-value pairs (sharing the same key) need to be sent to one Reduce
+
+
+
+A Reduce task can call the Reduce function on a contiguous set of key-value pairs (sharing the same key)
+
+
+
+Sorting as an application becomes very simple to write
+
+
+
+========
+
+Scheduling:
+
+MapReduce paradigm and the scheduler itself, it has to worry about parallelizing the map, 
+it has to worry about essentially in the stage, 
+
+splitting up or sharing of the data among the different map tasks. 
+
+It has to transfer the data from the map to the reduce 
+in a sense it has to work through the partitioning function here 
+and make sure that the correct data is being sent to the correct reduce function. 
+There has to parallelise the reduce. In other words, there has to schedule the reduce tasks themselves. 
+
+And finally, a sort of on top of these three it has to implement storage for the Map input,
+ for the Map output, which is the same as the Reduce input, and also the Reduce output.
+
+
+
+Essentially, none of the Reduce tasks can start before all the Map tasks are done. 
+Why is this? Well this is because if there is at least one map task running,
+ it's possible that it generates some key value pairs, while that key has
+  already been processed by the corresponding reduce, so you essentially you don't want to start any of the reduces. 
+
+
+
+-->
+
+paralellizing the map is easy because remember each map task was independent of the other map task, 
+and so these map tasks can be assigned essentially to any server. 
+And you typically want to assign the map tasks to servers where the data is close by 
+so that you incur low network overhead. 
+
+
+Then you also want to make sure that all the map output records with the same key are assigned to the same reduce.
+ And that helps you to transfer the data from the map to the reduce.
+
+In this case you use a partitioning function,
+for instance  the hash partitioning function may be used where 
+each key is assigned to the earliest task number which is obtained by hashing the key 
+more than load the number of reducers.
+ The reducers go from zero to the number of reducers minus one in id
+
+
+ Finalizing the reduce is also easy because each reduce task is essentially independent of the other.
+  Each reduce task is assigned a set of keys and these keys are disjoined across reducers,
+   so reducers do not overlap with each other. 
+   And in terms of number of keys, on the input or the output, and so they can be run independently of each other.
+
+
+
+ The map input in the beginning and there is output right at the end of the reduced phase
+  are both sorted in this distributed file system. This distribute file system is running typically 
+  on the same servers where the map tasks and the reduce tasks are run. 
+  
+  For instance, the Google version of Map Reduce Runs uses the Google File System,
+   also known as GFS, and Hadoop, the Apache Hadoop open source implementation uses HDFS,
+    known as the Hadoop Distributed File System.  
+
+
+It replicates file blocks a multiple times typically three times and there are three copies of each file block 
+located on three different servers. 
+And so when a map task starts up it needs to fetch the data block that
+ is its input data block from one of the servers that is storing it currently.
+ It queries the online HDFS file system to do this and this transfer is faster,
+  obviously, if the server on which that particular block is located,
+   is in fact the same server on which the map task is running. 
+
+   map output is not stored in the distributed files. And instead the map output is stored to the local disk
+    at the server on which the map task is running. 
+    And the reduce input is read from these remote disks. 
+    Okay, so it is read from the multiple remote disks, one for each of the map tasks services.
+     The reason why this intermediate shuffle traffic between the map and the reduce uses the local file system 
+     is you want it to be fast. This intermediate data is really not needed.
+      It's not really visible to the external user it's only needed for the reduce phase to start its work. 
+      And so essentially you don't want to incur the high overhead of the underlying distributed file 
+      system which might be replicated which might try to put it on some other servers. 
+      You don't want to incur this high overhead, you want it to get as fast as possible to the reduce tasks so that the job can finish quickly.
+
+
+      when the reduce output is done, it is written to the distribute file system back, so the output of the entire map reduce job is available in the distributed file system. 
+
+
+
+      ==============
+
+      YARN --> resource manager --master
+
+      node manager --> running on each node
+
+      application master : asks for containers for running map and reduce tasks
+
+
+      fault tolerance:
+      -----------------
+
+      Server failure:
+      NM heartbeat to RM:
+        in case of failure RM updates AM to take application
+
+      if task on node fails NM restart it
+
+      AM -> hearbeat to RM
+       -> if AM fails RM restarts it
+
+    if RM fails -- use checkpoint to recover secondary
+
+
+    Slow servers :
+        slows entire task
+        replicate the slowest tasks by keeping track of task progress
+
+
+    Locality
+    =======
+    schedule map where corresponding input block is present

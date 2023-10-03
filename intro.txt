@@ -1,0 +1,22 @@
+A distributed system is a collection of entities,
+each of these entities being
+ 
+autonomous, --- run standalone
+programmable, -- code -- essentially processes
+asynchronous  -- 
+
+this essentially means that each process or each entity runs according to its own clock 
+and these clocks are different entities are processes, are not synchronized with each other. 
+They are not always showing the same time as each other 
+
+failure-prone -- may fail or crash at any point in time
+
+and these entities communicate through an unreliable communication medium -- these messages that are being sent may be dropped completely, or they may be delayed for inordinately long periods of time.
+
+
+The entities are essentially processes.
+
+
+
+Cloud --> pay as you go, scale , SLA SLO performance
+
